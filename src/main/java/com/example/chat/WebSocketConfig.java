@@ -8,7 +8,7 @@ import org.springframework.web.socket.config.annotation.*;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer{
     @Override
-    public void configureMessagebroker(MessageBrokerRegistry config) {
+    public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic"); //where clients subscribe
         config.setApplicationDestinationPrefixes("/app"); // where clients send
     }
