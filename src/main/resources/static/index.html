@@ -9,7 +9,7 @@
 <body>
     <h2>Chat</h2>
     <input type="text" id="from" placeholder="Your name" />
-    <input type="text" id="message" placeholder="Your message" />
+    <input type="text" id="messageInput" placeholder="Your message" />
     <button onclick="sendMessage()">Send</button>
     <ul id="chat"></ul>
 
@@ -29,9 +29,19 @@
 
         function sendMessage() {
             const from = document.getElementById('from').value;
-            const message = document.getElementById('message').value;
+            const message = document.getElementById('messageInput').value;
             stompClient.send('/app/chat', {}, JSON.stringify({from, content: message}));
+
+            //Clear the input field
+
+            document.getElementById('messageInput').value = ' ';
         }
+
+        document.getElementById('messageInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+            }
+        });
     </script>
 
 </body>
