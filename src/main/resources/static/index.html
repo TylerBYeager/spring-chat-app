@@ -2,9 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Spring WebSocket Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
 </head>
 <body>
+    <h2>Chat</h2>
+    <input type="text" id="from" placeholder="Your name" />
+    <input type="text" id="message" placeholder="Your message" />
+    <button onclick="sendMessage()">Send</button>
+    <ul id="chat"></ul>
+
+    <script>
+        const socket = new SockJS('/ws');
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function () {
+            stompClient.subscribe('/topic/messages', function (msg) {
+                const body = JSON.parse(msg.body);
+                const chat = document.getElementById('chat');
+                const item = document.createElement('li');
+                item.textContent = `${body.time} ${body.from}: ${body.content}`;
+                chat.appendChild(item);
+            });
+        });
+
+        function sendMessage() {
+            const from = document.getElementById('from').value;
+            const message = document.getElementById('message').value;
+            stompClient.send('/app/chat', {}, JSON.stringify({from, content: message}));
+        }
+    </script>
 
 </body>
 </html>
