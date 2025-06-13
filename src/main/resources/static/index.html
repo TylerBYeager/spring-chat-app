@@ -69,6 +69,7 @@
     <input type="text" id="from" placeholder="Your name" />
     <input type="text" id="messageInput" placeholder="Your message" />
     <button onclick="sendMessage()">Send</button>
+    <p id="typingIndicator" style="color: gray;"></p>
     <ul id="chat"></ul>
 </div>
 
@@ -86,6 +87,17 @@
             });
         });
 
+        stompClient.subscribe("/topic/typing", function (msg) {
+                const typingIndicator = document.getElementById("typingIndicator");
+                typingIndicator.textContent = msg.body;
+
+                //Clear it out after 2 Seconds
+                setTimeout(() => {
+                    typingIndicator.textContent = "";
+                }, 2000);
+            });
+        });
+
         function sendMessage() {
             const from = document.getElementById('from').value;
             const message = document.getElementById('messageInput').value;
@@ -99,6 +111,13 @@
         document.getElementById('messageInput').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             sendMessage();
+            }
+        });
+
+        document.getElementById('messageInput').addEventListener('input', function () {
+            const from = document.getElementById('from').value;
+            if (from.trim() !== "") {
+                stompClient.send("/app/typing", {}, from);
             }
         });
     </script>
