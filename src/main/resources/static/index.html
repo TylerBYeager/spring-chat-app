@@ -73,54 +73,53 @@
     <ul id="chat"></ul>
 </div>
 
-    <script>
-        const socket = new SockJS('/ws');
-        const stompClient = Stomp.over(socket);
+<script>
+    const socket = new SockJS('/ws');
+    const stompClient = Stomp.over(socket);
 
-        stompClient.connect({}, function () {
-            stompClient.subscribe('/topic/messages', function (msg) {
-                const body = JSON.parse(msg.body);
-                const chat = document.getElementById('chat');
-                const item = document.createElement('li');
-                item.textContent = `${body.time} ${body.from}: ${body.content}`;
-                chat.appendChild(item);
-            });
+    stompClient.connect({}, function () {
+        // Subscribe to chat messages
+        stompClient.subscribe('/topic/messages', function (msg) {
+            const body = JSON.parse(msg.body);
+            const chat = document.getElementById('chat');
+            const item = document.createElement('li');
+            item.textContent = `${body.time} ${body.from}: ${body.content}`;
+            chat.appendChild(item);
         });
+
 
         stompClient.subscribe("/topic/typing", function (msg) {
-                const typingIndicator = document.getElementById("typingIndicator");
-                typingIndicator.textContent = msg.body;
+            const typingIndicator = document.getElementById("typingIndicator");
+            typingIndicator.textContent = msg.body;
 
-                //Clear it out after 2 Seconds
-                setTimeout(() => {
-                    typingIndicator.textContent = "";
-                }, 2000);
-            });
+            // Clear it after 2 seconds
+            setTimeout(() => {
+                typingIndicator.textContent = "";
+            }, 2000);
         });
+    });
 
-        function sendMessage() {
-            const from = document.getElementById('from').value;
-            const message = document.getElementById('messageInput').value;
-            stompClient.send('/app/chat', {}, JSON.stringify({from, content: message}));
+    function sendMessage() {
+        const from = document.getElementById('from').value;
+        const message = document.getElementById('messageInput').value;
+        stompClient.send('/app/chat', {}, JSON.stringify({from, content: message}));
 
-            //Clear the input field
+        document.getElementById('messageInput').value = '';
+    }
 
-            document.getElementById('messageInput').value = ' ';
-        }
-
-        document.getElementById('messageInput').addEventListener('keypress', function (e) {
+    document.getElementById('messageInput').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             sendMessage();
-            }
-        });
+        }
+    });
 
-        document.getElementById('messageInput').addEventListener('input', function () {
-            const from = document.getElementById('from').value;
-            if (from.trim() !== "") {
-                stompClient.send("/app/typing", {}, from);
-            }
-        });
-    </script>
+    document.getElementById('messageInput').addEventListener('input', function () {
+        const from = document.getElementById('from').value;
+        if (from.trim() !== "") {
+            stompClient.send("/app/typing", {}, from);
+        }
+    });
+</script>
 
 </body>
 </html>
