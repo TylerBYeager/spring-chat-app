@@ -5,13 +5,72 @@
     <title>Spring WebSocket Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding-top: 50px;
+            background-color: #f0f2f5;
+        }
+
+        #chat-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        input, button {
+            margin-top: 10px;
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #chat {
+            list-style: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        #chat li {
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+    </style>
+
 </head>
 <body>
+<div id="chat-container">
     <h2>Chat</h2>
     <input type="text" id="from" placeholder="Your name" />
     <input type="text" id="messageInput" placeholder="Your message" />
     <button onclick="sendMessage()">Send</button>
     <ul id="chat"></ul>
+</div>
 
     <script>
         const socket = new SockJS('/ws');
