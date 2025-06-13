@@ -2,6 +2,7 @@ package com.example.chat;
 
 import org.springframework.cglib.core.Local;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
@@ -19,6 +20,12 @@ public class ChatController {
                 message.getContent(),
                 LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
         );
+    }
+
+    @MessageMapping("/typing")
+    @SendTo("/topic/typing")
+    public String typing(@Payload String from) {
+        return from + " is typing...";
     }
 
 }
