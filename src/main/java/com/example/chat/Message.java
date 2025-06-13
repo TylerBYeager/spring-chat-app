@@ -3,11 +3,13 @@ package com.example.chat;
 public class Message {
         private String from;
         private String content;
+        private String time;
 
         public Message() {}
-        public Message(String from, String content) {
+        public Message(String from, String content, String time) {
             this.from = from;
             this.content = content;
+            this.time = time;
         }
 
         public String getFrom() {
@@ -25,5 +27,9 @@ public class Message {
         public void setContent(String content) {
             this.content = content;
         }
+
+        public String getTime() { return time; }
+
+        public void setTime(String time) { this.time = time; }
 
 }
