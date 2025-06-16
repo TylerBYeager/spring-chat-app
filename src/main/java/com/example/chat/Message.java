@@ -4,12 +4,14 @@ public class Message {
         private String from;
         private String content;
         private String time;
+        private MessageType type;
 
         public Message() {}
-        public Message(String from, String content, String time) {
+        public Message(String from, String content, String time, MessageType type) {
             this.from = from;
             this.content = content;
             this.time = time;
+            this.type = type;
         }
 
         public String getFrom() {
@@ -32,4 +34,9 @@ public class Message {
 
         public void setTime(String time) { this.time = time; }
 
+        public MessageType getType() { return type; }
+
+        public void setType(MessageType type) {
+            this.type = type;
+        }
 }

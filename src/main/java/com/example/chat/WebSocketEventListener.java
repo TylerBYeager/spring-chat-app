@@ -1,12 +1,14 @@
 package com.example.chat;
 
-import jakarta.websocket.Session;
+import com.example.chat.Message;
+import com.example.chat.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -23,10 +25,18 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
-        String joinMessage = "A new user has joined the chat";
+        logger.info("A user has connected.");
         String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-        Message message = new Message("System", joinMessage, time);
-        messagingTemplate.convertAndSend("/topic/messages", message);
+        Message message = new Message("System", "A new user has joined the chat", time, MessageType.JOIN);
+        messagingTemplate.convertAndSend("topic/messages", message);
+    }
+
+    @EventListener
+    public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
+        logger.info("A user has disconnected");
+        String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+        Message message = new Message("System", "A user has left the chat", time, MessageType.LEAVE);
+        messagingTemplate.convertAndSend("topic/messages", message);
     }
 
 
