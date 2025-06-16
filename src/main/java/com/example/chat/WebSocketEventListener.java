@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -33,10 +34,22 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
-        logger.info("A user has disconnected");
+
+        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
+        String username = (String) headerAccessor.getSessionAttributes().get("username");
+
         String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-        Message message = new Message("System", "A user has left the chat", time, MessageType.LEAVE);
-        messagingTemplate.convertAndSend("topic/messages", message);
+        Message message;
+
+        if (username != null) {
+            logger.info("User Disconnected: " + username);
+            message = new Message("System", username + " has left the chat", time, MessageType.LEAVE);
+        } else {
+            logger.info("User Disconnected: Unknown");
+            message = new Message("System", "A user has left the chat", time, MessageType.LEAVE);
+        }
+
+        messagingTemplate.convertAndSend("/topic/messages", message);
     }
 
 
