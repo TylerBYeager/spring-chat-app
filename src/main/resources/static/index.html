@@ -83,7 +83,20 @@
             const body = JSON.parse(msg.body);
             const chat = document.getElementById('chat');
             const item = document.createElement('li');
-            item.textContent = `${body.time} ${body.from}: ${body.content}`;
+
+            // Handle different message types
+            if (body.type === "JOIN") {
+                item.textContent = `${body.time} — ${body.content}`;
+                item.style.color = "green";
+                item.style.fontStyle = "italic";
+            } else if (body.type === "LEAVE") {
+                item.textContent = `${body.time} — ${body.content}`;
+                item.style.color = "red";
+                item.style.fontStyle = "italic";
+            } else {
+                item.textContent = `${body.time} ${body.from}: ${body.content}`;
+            }
+
             chat.appendChild(item);
         });
 
@@ -92,7 +105,7 @@
             const typingIndicator = document.getElementById("typingIndicator");
             typingIndicator.textContent = msg.body;
 
-            // Clear it after 2 seconds
+            // Clear it after 4 seconds
             setTimeout(() => {
                 typingIndicator.textContent = "";
             }, 4000);
@@ -102,7 +115,11 @@
     function sendMessage() {
         const from = document.getElementById('from').value;
         const message = document.getElementById('messageInput').value;
-        stompClient.send('/app/chat', {}, JSON.stringify({from, content: message}));
+        stompClient.send('/app/chat', {}, JSON.stringify({
+        from,
+        content: message,
+        type: "CHAT"
+        }));
 
         document.getElementById('messageInput').value = '';
     }
