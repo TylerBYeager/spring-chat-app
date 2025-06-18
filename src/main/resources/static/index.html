@@ -103,19 +103,25 @@
 
 
         stompClient.subscribe("/topic/typing", function (msg) {
-            const typingIndicator = document.getElementById("typingIndicator");
+        const typingIndicator = document.getElementById("typingIndicator");
+        if (msg.body && msg.body.trim() !== "") {
             typingIndicator.textContent = msg.body;
-
-            // Clear it after 4 seconds
+            // Clear notification after 4 seconds
             setTimeout(() => {
                 typingIndicator.textContent = "";
             }, 4000);
-        });
+        }
     });
+});
 
     function sendMessage() {
         const from = document.getElementById('from').value;
-        const message = document.getElementById('messageInput').value;
+        const message = document.getElementById('messageInput').value.trim();
+
+        if (from === "" || message === "") {
+            return; // Do not send empty messages or if name is blank
+        }
+
         stompClient.send('/app/chat', {}, JSON.stringify({
         from,
         content: message,
