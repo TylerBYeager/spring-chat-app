@@ -119,6 +119,7 @@
         const message = document.getElementById('messageInput').value.trim();
 
         if (from === "" || message === "") {
+            alert("Please enter your name and a message before sending.");
             return; // Do not send empty messages or if name is blank
         }
 
