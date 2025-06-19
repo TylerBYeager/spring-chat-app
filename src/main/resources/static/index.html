@@ -71,6 +71,7 @@
     <input type="text" id="messageInput" placeholder="Your message" />
     <button onclick="sendMessage()">Send</button>
     <p id="typingIndicator" style="color: gray;"></p>
+    <p id="errorMsg" style="color: red; display: none;"></p>
     <ul id="chat"></ul>
 </div>
 
@@ -115,21 +116,30 @@
 });
 
     function sendMessage() {
-        const from = document.getElementById('from').value;
-        const message = document.getElementById('messageInput').value.trim();
+    const from = document.getElementById('from').value.trim();
+    const message = document.getElementById('messageInput').value.trim();
+    const errorMsg = document.getElementById('errorMsg');
 
-        if (from === "" || message === "") {
-            alert("Please enter your name and a message before sending.");
-            return; // Do not send empty messages or if name is blank
-        }
+    if (from === "" || message === "") {
+        errorMsg.textContent = "Please enter your name and a message before sending.";
+        errorMsg.style.display = "block";
 
-        stompClient.send('/app/chat', {}, JSON.stringify({
+        setTimeout(() => {
+            errorMsg.style.display = "none";
+        }, 3000); // hides the error after 3 seconds
+
+        return;
+    }
+
+    errorMsg.style.display = "none"; // hide error if message is valid
+
+    stompClient.send('/app/chat', {}, JSON.stringify({
         from,
         content: message,
         type: "CHAT"
-        }));
+    }));
 
-        document.getElementById('messageInput').value = '';
+    document.getElementById('messageInput').value = '';
     }
 
     document.getElementById('messageInput').addEventListener('keypress', function (e) {
