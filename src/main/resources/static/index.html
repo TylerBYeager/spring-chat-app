@@ -76,39 +76,63 @@
 
 <script>
     const socket = new SockJS('/ws');
-    const stompClient = Stomp.over(socket);
+const stompClient = Stomp.over(socket);
 
-    stompClient.connect({}, function () {
-        stompClient.subscribe('/topic/messages', function (msg) {
-            const body = JSON.parse(msg.body);
-            const chat = document.getElementById('chat');
-            const item = document.createElement('li');
+stompClient.connect({}, function () {
+    stompClient.subscribe('/topic/messages', function (msg) {
+        const body = JSON.parse(msg.body);
+        const chat = document.getElementById('chat');
+        const item = document.createElement('li');
 
-            if (body.type === "JOIN") {
-                item.textContent = `${body.time} — ${body.content}`;
-                item.style.color = "green";
-                item.style.fontStyle = "italic";
-            } else if (body.type === "LEAVE") {
-                item.textContent = `${body.time} — ${body.content}`;
-                item.style.color = "red";
-                item.style.fontStyle = "italic";
-            } else {
-                item.textContent = `${body.time} ${body.from}: ${body.content}`;
-            }
+        if (body.type === "JOIN") {
+            item.textContent = `${body.time} — ${body.content}`;
+            item.style.color = "green";
+            item.style.fontStyle = "italic";
+        } else if (body.type === "LEAVE") {
+            item.textContent = `${body.time} — ${body.content}`;
+            item.style.color = "red";
+            item.style.fontStyle = "italic";
+        } else {
+            item.textContent = `${body.time} ${body.from}: ${body.content}`;
+        }
 
-            chat.appendChild(item);
-        });
-
-        stompClient.subscribe("/topic/typing", function (msg) {
-            const typingIndicator = document.getElementById("typingIndicator");
-            if (msg.body && msg.body.trim() !== "") {
-                typingIndicator.textContent = msg.body;
-                setTimeout(() => {
-                    typingIndicator.textContent = "";
-                }, 4000);
-            }
-        });
+        chat.appendChild(item);
     });
+
+
+    let typingTimeout = null;
+
+    stompClient.subscribe("/topic/typing", function (msg) {
+        const typingIndicator = document.getElementById("typingIndicator");
+
+        if (msg.body && msg.body.trim() !== "") {
+            typingIndicator.textContent = msg.body;
+
+            // Clear any previous timeout
+            if (typingTimeout !== null) {
+                clearTimeout(typingTimeout);
+            }
+
+            // Set new timeout to clear after 4 seconds of inactivity
+            typingTimeout = setTimeout(() => {
+                typingIndicator.textContent = "";
+                typingTimeout = null;
+            }, 4000);
+        }
+    });
+
+    // ✅ Enable send button and message input when username is entered
+    document.getElementById('from').addEventListener('input', function () {
+        const name = document.getElementById('from').value.trim();
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        const isNameEntered = name !== "";
+        messageInput.disabled = !isNameEntered;
+        sendButton.disabled = !isNameEntered;
+    });
+});
+
 
     function sendMessage() {
         const from = document.getElementById('from').value.trim();
