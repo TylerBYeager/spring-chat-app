@@ -29,7 +29,7 @@ public class WebSocketEventListener {
         logger.info("A user has connected.");
         String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
         Message message = new Message("System", "A new user has joined the chat", time, MessageType.JOIN);
-        messagingTemplate.convertAndSend("topic/messages", message);
+        messagingTemplate.convertAndSend("/topic/messages", message);
     }
 
     @EventListener

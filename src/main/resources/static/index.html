@@ -61,7 +61,6 @@
         }
 
     </style>
-
 </head>
 <body>
 <div id="chat-container">
@@ -69,7 +68,7 @@
     <h3>A work in progress</h3>
     <input type="text" id="from" placeholder="Your name" />
     <input type="text" id="messageInput" placeholder="Your message" />
-    <button onclick="sendMessage()">Send</button>
+    <button id="sendButton" onclick="sendMessage()">Send</button>
     <p id="typingIndicator" style="color: gray;"></p>
     <p id="errorMsg" style="color: red; display: none;"></p>
     <ul id="chat"></ul>
@@ -80,13 +79,11 @@
     const stompClient = Stomp.over(socket);
 
     stompClient.connect({}, function () {
-        // Subscribe to chat messages
         stompClient.subscribe('/topic/messages', function (msg) {
             const body = JSON.parse(msg.body);
             const chat = document.getElementById('chat');
             const item = document.createElement('li');
 
-            // Handle different message types
             if (body.type === "JOIN") {
                 item.textContent = `${body.time} — ${body.content}`;
                 item.style.color = "green";
@@ -102,44 +99,49 @@
             chat.appendChild(item);
         });
 
-
         stompClient.subscribe("/topic/typing", function (msg) {
-        const typingIndicator = document.getElementById("typingIndicator");
-        if (msg.body && msg.body.trim() !== "") {
-            typingIndicator.textContent = msg.body;
-            // Clear notification after 4 seconds
-            setTimeout(() => {
-                typingIndicator.textContent = "";
-            }, 4000);
-        }
+            const typingIndicator = document.getElementById("typingIndicator");
+            if (msg.body && msg.body.trim() !== "") {
+                typingIndicator.textContent = msg.body;
+                setTimeout(() => {
+                    typingIndicator.textContent = "";
+                }, 4000);
+            }
+        });
     });
-});
 
     function sendMessage() {
-    const from = document.getElementById('from').value.trim();
-    const message = document.getElementById('messageInput').value.trim();
-    const errorMsg = document.getElementById('errorMsg');
+        const from = document.getElementById('from').value.trim();
+        const message = document.getElementById('messageInput').value.trim();
+        const errorMsg = document.getElementById('errorMsg');
 
-    if (from === "" || message === "") {
-        errorMsg.textContent = "Please enter your name and a message before sending.";
-        errorMsg.style.display = "block";
-
-        setTimeout(() => {
+        // Show appropriate message
+        if (from === "" && message === "") {
+            errorMsg.textContent = "Please enter your name and a message before sending.";
+            errorMsg.style.display = "block";
+        } else if (from === "") {
+            errorMsg.textContent = "Please enter your name before sending a message.";
+            errorMsg.style.display = "block";
+        } else if (message === "") {
+            errorMsg.textContent = "Please enter a message before sending.";
+            errorMsg.style.display = "block";
+        } else {
             errorMsg.style.display = "none";
-        }, 3000); // hides the error after 3 seconds
 
-        return;
-    }
+            stompClient.send('/app/chat', {}, JSON.stringify({
+                from,
+                content: message,
+                type: "CHAT"
+            }));
 
-    errorMsg.style.display = "none"; // hide error if message is valid
+            document.getElementById('messageInput').value = '';
+        }
 
-    stompClient.send('/app/chat', {}, JSON.stringify({
-        from,
-        content: message,
-        type: "CHAT"
-    }));
-
-    document.getElementById('messageInput').value = '';
+        if (errorMsg.style.display === "block") {
+            setTimeout(() => {
+                errorMsg.style.display = "none";
+            }, 3000);
+        }
     }
 
     document.getElementById('messageInput').addEventListener('keypress', function (e) {
@@ -149,12 +151,11 @@
     });
 
     document.getElementById('messageInput').addEventListener('input', function () {
-        const from = document.getElementById('from').value;
-        if (from.trim() !== "") {
+        const from = document.getElementById('from').value.trim();
+        if (from !== "") {
             stompClient.send("/app/typing", {}, from);
         }
     });
 </script>
-
 </body>
 </html>
