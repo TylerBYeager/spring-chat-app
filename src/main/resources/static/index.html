@@ -5,6 +5,7 @@
     <title>Spring WebSocket Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -82,6 +83,7 @@
 <script>
     let stompClient;
     let username;
+    let typingTimeout = null;
 
     function joinChat() {
         const input = document.getElementById("usernameInput").value.trim();
@@ -102,12 +104,45 @@
         stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function () {
+            // Subscribe to chat messages
             stompClient.subscribe('/topic/messages', function (msg) {
                 const body = JSON.parse(msg.body);
                 const chat = document.getElementById('chat');
                 const item = document.createElement('li');
                 item.textContent = `${body.time} ${body.from}: ${body.content}`;
                 chat.appendChild(item);
+            });
+
+            // Subscribe to typing indicator
+            stompClient.subscribe("/topic/typing", function (msg) {
+                const typingIndicator = document.getElementById("typingIndicator");
+
+                if (msg.body && msg.body.trim() !== "") {
+                    typingIndicator.textContent = msg.body;
+
+                    if (typingTimeout !== null) {
+                        clearTimeout(typingTimeout);
+                    }
+
+                    typingTimeout = setTimeout(() => {
+                        typingIndicator.textContent = "";
+                        typingTimeout = null;
+                    }, 4000);
+                }
+            });
+
+            // Add typing listener once connected
+            const messageInput = document.getElementById('messageInput');
+            messageInput.addEventListener('input', function () {
+                if (stompClient && username) {
+                    stompClient.send("/app/typing", {}, `${username} is typing...`);
+                }
+            });
+
+            messageInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
             });
         });
     }
@@ -138,7 +173,7 @@
         if (savedName) {
             document.getElementById("usernameInput").value = savedName;
         }
-    }
+    };
 </script>
 </body>
 </html>

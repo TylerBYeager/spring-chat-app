@@ -45,14 +45,14 @@ public class ChatController {
     @MessageMapping("/typing")
     @SendTo("/topic/typing")
     public String typing(@Payload String from, SimpMessageHeaderAccessor headerAccessor) {
-        Object username = headerAccessor.getSessionAttributes().get("username");
+        Object sessionUsername = headerAccessor.getSessionAttributes().get("username");
 
-        // Only send "is typing" if the user has already joined (i.e., username is saved)
-        if (username != null && username.equals(from)) {
-            return from + " is typing...";
+        // If session already has a username, send a typing message
+        if (sessionUsername != null) {
+            return sessionUsername + " is typing...";
         }
 
-        // Otherwise, don't broadcast anything
-        return null;
+        // Otherwise, no broadcast
+        return "";
     }
 }
