@@ -5,26 +5,27 @@
     <title>Spring WebSocket Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
-
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
             display: flex;
             justify-content: center;
-            padding-top: 50px;
-            background-color: #f0f2f5;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
 
-        #chat-container {
+        #login-container, #chat-container {
             background: white;
             padding: 20px;
             border-radius: 8px;
             width: 400px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        h2 {
-            text-align: center;
+        #chat-container {
+            display: none;
         }
 
         input, button {
@@ -59,14 +60,18 @@
             padding: 5px 0;
             border-bottom: 1px solid #f0f0f0;
         }
-
     </style>
 </head>
 <body>
+<div id="login-container">
+    <h2>Enter your name to join the chat</h2>
+    <input type="text" id="usernameInput" placeholder="Your name" />
+    <button onclick="joinChat()">Join</button>
+</div>
+
 <div id="chat-container">
-    <h2>Web Socket Live Chat App</h2>
-    <h3>A work in progress</h3>
-    <input type="text" id="from" placeholder="Your name" />
+    <h2>WebSocket Chat</h2>
+    <p id="welcomeMsg"></p>
     <input type="text" id="messageInput" placeholder="Your message" />
     <button id="sendButton" onclick="sendMessage()">Send</button>
     <p id="typingIndicator" style="color: gray;"></p>
@@ -75,111 +80,65 @@
 </div>
 
 <script>
-    const socket = new SockJS('/ws');
-const stompClient = Stomp.over(socket);
+    let stompClient;
+    let username;
 
-stompClient.connect({}, function () {
-    stompClient.subscribe('/topic/messages', function (msg) {
-        const body = JSON.parse(msg.body);
-        const chat = document.getElementById('chat');
-        const item = document.createElement('li');
+    function joinChat() {
+        const input = document.getElementById("usernameInput").value.trim();
+        if (!input) return;
 
-        if (body.type === "JOIN") {
-            item.textContent = `${body.time} — ${body.content}`;
-            item.style.color = "green";
-            item.style.fontStyle = "italic";
-        } else if (body.type === "LEAVE") {
-            item.textContent = `${body.time} — ${body.content}`;
-            item.style.color = "red";
-            item.style.fontStyle = "italic";
-        } else {
-            item.textContent = `${body.time} ${body.from}: ${body.content}`;
-        }
+        username = input;
+        localStorage.setItem("chatUsername", username);
 
-        chat.appendChild(item);
-    });
+        document.getElementById("welcomeMsg").textContent = `Hello ${username}, welcome to the chat!`;
+        document.getElementById("login-container").style.display = "none";
+        document.getElementById("chat-container").style.display = "block";
 
+        connectSocket();
+    }
 
-    let typingTimeout = null;
+    function connectSocket() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
 
-    stompClient.subscribe("/topic/typing", function (msg) {
-        const typingIndicator = document.getElementById("typingIndicator");
-
-        if (msg.body && msg.body.trim() !== "") {
-            typingIndicator.textContent = msg.body;
-
-            // Clear any previous timeout
-            if (typingTimeout !== null) {
-                clearTimeout(typingTimeout);
-            }
-
-            // Set new timeout to clear after 4 seconds of inactivity
-            typingTimeout = setTimeout(() => {
-                typingIndicator.textContent = "";
-                typingTimeout = null;
-            }, 4000);
-        }
-    });
-
-    // ✅ Enable send button and message input when username is entered
-    document.getElementById('from').addEventListener('input', function () {
-        const name = document.getElementById('from').value.trim();
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
-
-        const isNameEntered = name !== "";
-        messageInput.disabled = !isNameEntered;
-        sendButton.disabled = !isNameEntered;
-    });
-});
-
+        stompClient.connect({}, function () {
+            stompClient.subscribe('/topic/messages', function (msg) {
+                const body = JSON.parse(msg.body);
+                const chat = document.getElementById('chat');
+                const item = document.createElement('li');
+                item.textContent = `${body.time} ${body.from}: ${body.content}`;
+                chat.appendChild(item);
+            });
+        });
+    }
 
     function sendMessage() {
-        const from = document.getElementById('from').value.trim();
         const message = document.getElementById('messageInput').value.trim();
         const errorMsg = document.getElementById('errorMsg');
 
-        // Show appropriate message
-        if (from === "" && message === "") {
-            errorMsg.textContent = "Please enter your name and a message before sending.";
+        if (!username || !message) {
+            errorMsg.textContent = "Please enter a message.";
             errorMsg.style.display = "block";
-        } else if (from === "") {
-            errorMsg.textContent = "Please enter your name before sending a message.";
-            errorMsg.style.display = "block";
-        } else if (message === "") {
-            errorMsg.textContent = "Please enter a message before sending.";
-            errorMsg.style.display = "block";
-        } else {
-            errorMsg.style.display = "none";
-
-            stompClient.send('/app/chat', {}, JSON.stringify({
-                from,
-                content: message,
-                type: "CHAT"
-            }));
-
-            document.getElementById('messageInput').value = '';
+            setTimeout(() => errorMsg.style.display = "none", 3000);
+            return;
         }
 
-        if (errorMsg.style.display === "block") {
-            setTimeout(() => {
-                errorMsg.style.display = "none";
-            }, 3000);
-        }
+        stompClient.send('/app/chat', {}, JSON.stringify({
+            from: username,
+            content: message,
+            type: "CHAT"
+        }));
+
+        document.getElementById('messageInput').value = '';
     }
 
-    document.getElementById('messageInput').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            sendMessage();
+    // Auto-fill username if stored
+    window.onload = () => {
+        const savedName = localStorage.getItem("chatUsername");
+        if (savedName) {
+            document.getElementById("usernameInput").value = savedName;
         }
-    });
-
-    document.getElementById('messageInput').addEventListener('input', function () {
-        const from = document.getElementById('from').value.trim();
-        if (from !== "") {
-            stompClient.send("/app/typing", {}, from);
-        }
-    });
+    }
 </script>
 </body>
 </html>
