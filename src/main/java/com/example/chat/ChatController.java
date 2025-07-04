@@ -50,13 +50,13 @@ public class ChatController {
 
     @MessageMapping("/typing")
     @SendTo("/topic/typing")
-    public String typing(@Payload String from, SimpMessageHeaderAccessor headerAccessor) {
+    public void typing(@Payload Message message, SimpMessageHeaderAccessor headerAccessor) {
         Object sessionUsername = headerAccessor.getSessionAttributes().get("username");
 
-        if (sessionUsername != null) {
-            return sessionUsername + " is typing...";
+        // Only broadcast if the session's username matches the one from the message
+        if (sessionUsername != null && sessionUsername.equals(message.getFrom())) {
+            // Send structured typing message (JSON)
+            messagingTemplate.convertAndSend("/topic/typing", message);
         }
-
-        return "";
     }
 }
