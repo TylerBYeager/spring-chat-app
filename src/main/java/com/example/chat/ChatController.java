@@ -14,21 +14,27 @@ import java.time.format.DateTimeFormatter;
 public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final WebSocketEventListener eventListener; // ✅ Inject listener
 
-    public ChatController(SimpMessagingTemplate messagingTemplate) {
+    public ChatController(SimpMessagingTemplate messagingTemplate, WebSocketEventListener eventListener) {
         this.messagingTemplate = messagingTemplate;
+        this.eventListener = eventListener;
     }
 
-    @MessageMapping("/chat") // from client: /app/chat
-    @SendTo("/topic/messages") // return value goes here
+    @MessageMapping("/chat")
+    @SendTo("/topic/messages")
     public Message send(@Payload Message message, SimpMessageHeaderAccessor headerAccessor) {
         String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         message.setTime(time);
 
+        // First time the user sends a message, capture and broadcast JOIN
         if (headerAccessor.getSessionAttributes().get("username") == null && message.getFrom() != null) {
             headerAccessor.getSessionAttributes().put("username", message.getFrom());
 
-            // Broadcast JOIN message when first connecting
+            // ✅ Track new user for user list updates
+            eventListener.addUser(message.getFrom());
+
+            // Broadcast JOIN message
             Message joinMessage = new Message(
                     "System",
                     message.getFrom() + " has joined the chat",
@@ -47,12 +53,10 @@ public class ChatController {
     public String typing(@Payload String from, SimpMessageHeaderAccessor headerAccessor) {
         Object sessionUsername = headerAccessor.getSessionAttributes().get("username");
 
-        // If session already has a username, send a typing message
         if (sessionUsername != null) {
             return sessionUsername + " is typing...";
         }
 
-        // Otherwise, no broadcast
         return "";
     }
 }
