@@ -206,13 +206,21 @@
         document.getElementById('messageInput').value = '';
     }
 
-    // Pre-fill username
-    window.onload = () => {
+    // Wait until DOM is fully ready
+    window.addEventListener('DOMContentLoaded', () => {
         const savedName = localStorage.getItem("chatUsername");
+        const usernameInput = document.getElementById("usernameInput");
+
         if (savedName) {
-            document.getElementById("usernameInput").value = savedName;
+            usernameInput.value = savedName;
         }
-    };
+
+        usernameInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                joinChat();
+            }
+        });
+    });
 </script>
 </body>
 </html>
