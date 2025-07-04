@@ -61,6 +61,24 @@
             padding: 5px 0;
             border-bottom: 1px solid #f0f0f0;
         }
+
+        #usersList {
+            list-style: none;
+            padding-left: 0;
+            font-size: 0.9em;
+            color: #333;
+            margin: 10px 0 0 0;
+        }
+
+        #usersList li {
+            padding: 2px 0;
+        }
+
+        #userPanel {
+            margin-top: 10px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -73,10 +91,18 @@
 <div id="chat-container">
     <h2>WebSocket Chat</h2>
     <p id="welcomeMsg"></p>
+
     <input type="text" id="messageInput" placeholder="Your message" />
     <button id="sendButton" onclick="sendMessage()">Send</button>
+
     <p id="typingIndicator" style="color: gray;"></p>
     <p id="errorMsg" style="color: red; display: none;"></p>
+
+    <div id="userPanel">
+        <strong>Users Online:</strong>
+        <ul id="usersList"></ul>
+    </div>
+
     <ul id="chat"></ul>
 </div>
 
@@ -104,7 +130,7 @@
         stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function () {
-            // Subscribe to chat messages
+            // 📥 Chat messages
             stompClient.subscribe('/topic/messages', function (msg) {
                 const body = JSON.parse(msg.body);
                 const chat = document.getElementById('chat');
@@ -113,7 +139,7 @@
                 chat.appendChild(item);
             });
 
-            // Subscribe to typing indicator
+            // 👀 Typing indicator
             stompClient.subscribe("/topic/typing", function (msg) {
                 const typingIndicator = document.getElementById("typingIndicator");
 
@@ -131,7 +157,20 @@
                 }
             });
 
-            // Add typing listener once connected
+            // 👥 User list
+            stompClient.subscribe("/topic/users", function (msg) {
+                const users = JSON.parse(msg.body);
+                const usersList = document.getElementById("usersList");
+                usersList.innerHTML = "";
+
+                users.forEach(function (user) {
+                    const li = document.createElement("li");
+                    li.textContent = user;
+                    usersList.appendChild(li);
+                });
+            });
+
+            // 🖊️ Send typing indicator
             const messageInput = document.getElementById('messageInput');
             messageInput.addEventListener('input', function () {
                 if (stompClient && username) {
@@ -167,7 +206,7 @@
         document.getElementById('messageInput').value = '';
     }
 
-    // Auto-fill username if stored
+    // Pre-fill username
     window.onload = () => {
         const savedName = localStorage.getItem("chatUsername");
         if (savedName) {
