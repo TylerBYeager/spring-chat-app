@@ -141,21 +141,22 @@
 
             // 👀 Typing indicator
             stompClient.subscribe("/topic/typing", function (msg) {
-                const typingIndicator = document.getElementById("typingIndicator");
+    const typingData = JSON.parse(msg.body);
+    const typingIndicator = document.getElementById("typingIndicator");
 
-                if (msg.body && msg.body.trim() !== "") {
-                    typingIndicator.textContent = msg.body;
+    if (typingData && typingData.from && typingData.from !== username) {
+        typingIndicator.textContent = `${typingData.from} is typing...`;
 
-                    if (typingTimeout !== null) {
-                        clearTimeout(typingTimeout);
-                    }
+        if (typingTimeout !== null) {
+            clearTimeout(typingTimeout);
+        }
 
-                    typingTimeout = setTimeout(() => {
-                        typingIndicator.textContent = "";
-                        typingTimeout = null;
-                    }, 4000);
-                }
-            });
+        typingTimeout = setTimeout(() => {
+            typingIndicator.textContent = "";
+            typingTimeout = null;
+        }, 4000);
+    }
+});
 
             // 👥 User list
             stompClient.subscribe("/topic/users", function (msg) {
@@ -171,12 +172,14 @@
             });
 
             // 🖊️ Send typing indicator
-            const messageInput = document.getElementById('messageInput');
             messageInput.addEventListener('input', function () {
                 if (stompClient && username) {
-                    stompClient.send("/app/typing", {}, `${username} is typing...`);
-                }
-            });
+                    stompClient.send("/app/typing", {}, JSON.stringify({
+                    from: username,
+                    type: "TYPING"
+                }));
+            }
+        });
 
             messageInput.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
