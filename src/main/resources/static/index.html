@@ -144,17 +144,26 @@
     const typingData = JSON.parse(msg.body);
     const typingIndicator = document.getElementById("typingIndicator");
 
+    // Only show for other users
     if (typingData && typingData.from && typingData.from !== username) {
-        typingIndicator.textContent = `${typingData.from} is typing...`;
+        if (typingData.type === "TYPING") {
+            typingIndicator.textContent = `${typingData.from} is typing...`;
 
-        if (typingTimeout !== null) {
-            clearTimeout(typingTimeout);
-        }
+            if (typingTimeout !== null) {
+                clearTimeout(typingTimeout);
+            }
 
-        typingTimeout = setTimeout(() => {
+            typingTimeout = setTimeout(() => {
+                typingIndicator.textContent = "";
+                typingTimeout = null;
+            }, 4000);
+        } else if (typingData.type === "STOP_TYPING") {
             typingIndicator.textContent = "";
-            typingTimeout = null;
-        }, 4000);
+            if (typingTimeout !== null) {
+                clearTimeout(typingTimeout);
+                typingTimeout = null;
+            }
+        }
     }
 });
 
@@ -172,14 +181,15 @@
             });
 
             // 🖊️ Send typing indicator
+            const messageInput = document.getElementById('messageInput');
             messageInput.addEventListener('input', function () {
                 if (stompClient && username) {
                     stompClient.send("/app/typing", {}, JSON.stringify({
-                    from: username,
-                    type: "TYPING"
-                }));
-            }
-        });
+                        from: username,
+                        type: "TYPING"
+                    }));
+                }
+            });
 
             messageInput.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
@@ -208,11 +218,18 @@
 
         document.getElementById('messageInput').value = '';
 
+        // Clear local typing indicator
         if (typingTimeout !== null) {
             clearTimeout(typingTimeout);
             typingTimeout = null;
-    }
-document.getElementById("typingIndicator").textContent = "";
+        }
+        document.getElementById("typingIndicator").textContent = "";
+
+        // Notify others to clear typing indicator
+        stompClient.send("/app/typing", {}, JSON.stringify({
+            from: username,
+            type: "STOP_TYPING"
+        }));
     }
 
     // Wait until DOM is fully ready

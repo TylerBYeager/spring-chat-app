@@ -3,6 +3,7 @@ package com.example.chat;
 public enum MessageType {
     CHAT,
     JOIN,
-    LEAVE,
-    TYPING
+    TYPING,
+    STOP_TYPING,
+    LEAVE
 }
