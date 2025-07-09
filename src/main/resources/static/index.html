@@ -140,32 +140,35 @@
             });
 
             // 👀 Typing indicator
+            const typingUsers = new Set();
+
             stompClient.subscribe("/topic/typing", function (msg) {
-    const typingData = JSON.parse(msg.body);
-    const typingIndicator = document.getElementById("typingIndicator");
+                const typingData = JSON.parse(msg.body);
+                const typingIndicator = document.getElementById("typingIndicator");
 
-    // Only show for other users
-    if (typingData && typingData.from && typingData.from !== username) {
-        if (typingData.type === "TYPING") {
-            typingIndicator.textContent = `${typingData.from} is typing...`;
+                if (!typingData || typingData.from === username) return;
 
-            if (typingTimeout !== null) {
-                clearTimeout(typingTimeout);
-            }
+                if (typingData.type === "TYPING") {
+                    typingUsers.add(typingData.from);
+                } else if (typingData.type === "STOP_TYPING") {
+                    typingUsers.delete(typingData.from);
+                }
 
-            typingTimeout = setTimeout(() => {
-                typingIndicator.textContent = "";
-                typingTimeout = null;
-            }, 4000);
-        } else if (typingData.type === "STOP_TYPING") {
-            typingIndicator.textContent = "";
-            if (typingTimeout !== null) {
-                clearTimeout(typingTimeout);
-                typingTimeout = null;
-            }
-        }
-    }
-});
+                // Render indicator
+                if (typingUsers.size === 0) {
+                    typingIndicator.textContent = "";
+                } else {
+                    const names = Array.from(typingUsers);
+                    if (names.length === 1) {
+                        typingIndicator.textContent = `${names[0]} is typing...`;
+                    } else if (names.length === 2) {
+                        typingIndicator.textContent = `${names[0]} and ${names[1]} are typing...`;
+                    } else {
+                        const last = names.pop();
+                        typingIndicator.textContent = `${names.join(', ')}, and ${last} are typing...`;
+                    }
+                }
+            });
 
             // 👥 User list
             stompClient.subscribe("/topic/users", function (msg) {
