@@ -8,114 +8,48 @@
 
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    height: 100vh;
+}
 
-        #login-container, #chat-container {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
+#login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
 
-        #login-container {
-            padding: 20px;
-            width: 400px;
-        }
+#login-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
-        #chat-container {
-            display: none;
-            width: 700px;
-            height: 80vh;
-            display: flex;
-            overflow: hidden;
-        }
-
-        #chatSection {
-            flex: 3;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #ddd;
-        }
-
-        #userSidebar {
-            flex: 1;
-            background-color: #f8f9fa;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        input, button {
-            margin-top: 10px;
-            width: 100%;
-            padding: 10px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        #chat {
-            list-style: none;
-            padding: 0;
-            margin-top: 15px;
-            overflow-y: auto;
-            flex: 1;
-            border-top: 1px solid #eee;
-            max-height: 300px;
-        }
-
-        #chat li {
-            padding: 5px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        #usersList {
-            list-style: none;
-            padding-left: 0;
-            font-size: 0.9em;
-            color: #333;
-            margin: 0;
-        }
-
-        #usersList li {
-            padding: 4px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        #typingIndicator {
-            color: gray;
-            min-height: 1.5em;
-            margin-top: 10px;
-        }
-
-        #errorMsg {
-            color: red;
-            display: none;
-        }
+#chat-container {
+    display: none; /* Hidden initially */
+    width: 700px;
+    height: 80vh;
+    margin: 40px auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    overflow: hidden;
+}
     </style>
 </head>
 <body>
 
-<div id="login-container">
-    <h2>Enter your name to join the chat</h2>
-    <input type="text" id="usernameInput" placeholder="Your name" />
-    <button onclick="joinChat()">Join</button>
+<div id="login-wrapper">
+    <div id="login-container">
+        <h2>Enter your name to join the chat</h2>
+        <input type="text" id="usernameInput" placeholder="Your name" />
+        <button onclick="joinChat()">Join</button>
+    </div>
 </div>
 
 <div id="chat-container">
@@ -154,8 +88,8 @@
         localStorage.setItem("chatUsername", username);
 
         document.getElementById("welcomeMsg").textContent = `Hello ${username}, welcome to the chat!`;
-        document.getElementById("login-container").style.display = "none";
-        document.getElementById("chat-container").style.display = "flex";
+        document.getElementById("login-wrapper").style.display = "none";
+document.getElementById("chat-container").style.display = "flex";
 
         connectSocket();
     }
