@@ -86,8 +86,8 @@
 
         /* INPUT */
         #messageInput {
-          flex-grow: 1;  /* Takes all available space */
-          min-width: 0;  /* Important for flexbox to prevent shrinking issues */
+          flex-grow: 1;
+          min-width: 0;
           padding: 10px;
           font-size: 1em;
           border: 1px solid #ccc;
@@ -108,6 +108,32 @@
 
         #sendButton:hover {
           background-color: #0056b3;
+        }
+
+        /* EMOJI TOGGLE BUTTON */
+        #emojiToggle {
+          font-size: 20px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          flex-shrink: 0;
+          padding: 5px 10px;
+          user-select: none;
+        }
+
+        /* EMOJI PICKER WRAPPER */
+        #emojiWrapper {
+          margin-top: 5px;
+          display: none;
+          width: 100%;
+          max-width: 300px;
+        }
+
+        /* EMOJI PICKER */
+        #emojiPicker {
+          width: 100% !important;
+          height: 250px !important;
+          box-sizing: border-box;
         }
 
         /* TYPING INDICATOR */
@@ -155,30 +181,24 @@
           box-sizing: border-box;
         }
 
-        /* EMOJI PICKER */
-        #emojiPicker {
-          max-width: 300px;
-          height: 250px;
+        #messageArea {
+          width: 100%;
+          max-width: 100%;  /* ensure no max width shrinking */
         }
 
-        /* EMOJI PICKER WRAPPER (hidden by default, shown on toggle) */
         #emojiWrapper {
-          margin-top: 5px;
-          display: none;
+          display: none; /* default */
+          width: 100% !important;
+          max-width: 100% !important; /* override any max-width */
         }
 
-        /* EMOJI TOGGLE BUTTON */
-        #emojiToggle {
-          font-size: 20px;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          flex-shrink: 0;
-          padding: 5px 10px;
-          user-select: none;
+        #emojiPicker {
+          width: 100% !important;
+          height: 250px !important;
+          display: block !important;  /* ensure block display */
+          box-sizing: border-box;
         }
     </style>
-
 </head>
 <body>
 
@@ -370,7 +390,7 @@
     // Toggle emoji picker display
     document.getElementById('emojiToggle').addEventListener('click', function () {
       const picker = document.getElementById('emojiWrapper');
-      picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+      picker.style.display = picker.style.display === 'none' || picker.style.display === '' ? 'block' : 'none';
     });
 
     // Add emoji to input
