@@ -5,7 +5,7 @@
     <title>Spring WebSocket Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
-
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
     <style>
         body {
           font-family: Arial, sans-serif;
@@ -146,6 +146,11 @@
         input[type="text"], button {
           box-sizing: border-box;
         }
+
+        #emojiPicker {
+            max-width: 300px;
+            height: 250px;
+        }
     </style>
 </head>
 <body>
@@ -170,8 +175,14 @@
         <p id="errorMsg"></p>
 
         <div id="messageArea">
-            <input type="text" id="messageInput" placeholder="Your message" />
-            <button id="sendButton" onclick="sendMessage()">Send</button>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button id="emojiToggle" title="Emoji Picker" style="font-size: 20px;">😊</button>
+                <input type="text" id="messageInput" placeholder="Your message" />
+                <button id="sendButton" onclick="sendMessage()">Send</button>
+            </div>
+            <div id="emojiWrapper" style="display: none; margin-top: 5px;">
+                <emoji-picker id="emojiPicker"></emoji-picker>
+            </div>
         </div>
     </div>
 
@@ -327,6 +338,20 @@
           joinChat();
         }
       });
+    });
+
+    // Toggle emoji picker display
+        document.getElementById('emojiToggle').addEventListener('click', function () {
+        const picker = document.getElementById('emojiWrapper');
+        picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+        });
+
+    // Add emoji to input
+        document.getElementById('emojiPicker').addEventListener('emoji-click', event => {
+        const emoji = event.detail.unicode;
+        const input = document.getElementById('messageInput');
+        input.value += emoji;
+        input.focus();
     });
 </script>
 
