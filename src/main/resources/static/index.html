@@ -19,14 +19,36 @@
 
         #login-container, #chat-container {
             background: white;
-            padding: 20px;
             border-radius: 8px;
-            width: 400px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #login-container {
+            padding: 20px;
+            width: 400px;
         }
 
         #chat-container {
             display: none;
+            width: 700px;
+            height: 80vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        #chatSection {
+            flex: 3;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #ddd;
+        }
+
+        #userSidebar {
+            flex: 1;
+            background-color: #f8f9fa;
+            padding: 20px;
+            overflow-y: auto;
         }
 
         input, button {
@@ -51,10 +73,11 @@
         #chat {
             list-style: none;
             padding: 0;
-            max-height: 300px;
-            overflow-y: auto;
             margin-top: 15px;
+            overflow-y: auto;
+            flex: 1;
             border-top: 1px solid #eee;
+            max-height: 300px;
         }
 
         #chat li {
@@ -67,21 +90,28 @@
             padding-left: 0;
             font-size: 0.9em;
             color: #333;
-            margin: 10px 0 0 0;
+            margin: 0;
         }
 
         #usersList li {
-            padding: 2px 0;
+            padding: 4px 0;
+            border-bottom: 1px solid #e0e0e0;
         }
 
-        #userPanel {
+        #typingIndicator {
+            color: gray;
+            min-height: 1.5em;
             margin-top: 10px;
-            border-top: 1px solid #ccc;
-            padding-top: 10px;
+        }
+
+        #errorMsg {
+            color: red;
+            display: none;
         }
     </style>
 </head>
 <body>
+
 <div id="login-container">
     <h2>Enter your name to join the chat</h2>
     <input type="text" id="usernameInput" placeholder="Your name" />
@@ -89,27 +119,32 @@
 </div>
 
 <div id="chat-container">
-    <h2>WebSocket Chat</h2>
-    <p id="welcomeMsg"></p>
+    <!-- Left: Chat Section -->
+    <div id="chatSection">
+        <h2>WebSocket Chat</h2>
+        <p id="welcomeMsg"></p>
 
-    <input type="text" id="messageInput" placeholder="Your message" />
-    <button id="sendButton" onclick="sendMessage()">Send</button>
+        <input type="text" id="messageInput" placeholder="Your message" />
+        <button id="sendButton" onclick="sendMessage()">Send</button>
 
-    <p id="typingIndicator" style="color: gray;"></p>
-    <p id="errorMsg" style="color: red; display: none;"></p>
+        <p id="typingIndicator"></p>
+        <p id="errorMsg"></p>
 
-    <div id="userPanel">
-        <strong>Users Online:</strong>
-        <ul id="usersList"></ul>
+        <ul id="chat"></ul>
     </div>
 
-    <ul id="chat"></ul>
+    <!-- Right: User Sidebar -->
+    <div id="userSidebar">
+        <h3>Users Online</h3>
+        <ul id="usersList"></ul>
+    </div>
 </div>
 
 <script>
     let stompClient;
     let username;
     let typingTimeout = null;
+    const typingUsers = new Set();
 
     function joinChat() {
         const input = document.getElementById("usernameInput").value.trim();
@@ -120,7 +155,7 @@
 
         document.getElementById("welcomeMsg").textContent = `Hello ${username}, welcome to the chat!`;
         document.getElementById("login-container").style.display = "none";
-        document.getElementById("chat-container").style.display = "block";
+        document.getElementById("chat-container").style.display = "flex";
 
         connectSocket();
     }
@@ -130,17 +165,14 @@
         stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function () {
-            // 📥 Chat messages
             stompClient.subscribe('/topic/messages', function (msg) {
                 const body = JSON.parse(msg.body);
                 const chat = document.getElementById('chat');
                 const item = document.createElement('li');
                 item.textContent = `${body.time} ${body.from}: ${body.content}`;
                 chat.appendChild(item);
+                chat.scrollTop = chat.scrollHeight;
             });
-
-            // 👀 Typing indicator
-            const typingUsers = new Set();
 
             stompClient.subscribe("/topic/typing", function (msg) {
                 const typingData = JSON.parse(msg.body);
@@ -154,7 +186,6 @@
                     typingUsers.delete(typingData.from);
                 }
 
-                // Render indicator
                 if (typingUsers.size === 0) {
                     typingIndicator.textContent = "";
                 } else {
@@ -170,7 +201,6 @@
                 }
             });
 
-            // 👥 User list
             stompClient.subscribe("/topic/users", function (msg) {
                 const users = JSON.parse(msg.body);
                 const usersList = document.getElementById("usersList");
@@ -183,14 +213,26 @@
                 });
             });
 
-            // 🖊️ Send typing indicator
             const messageInput = document.getElementById('messageInput');
+
             messageInput.addEventListener('input', function () {
                 if (stompClient && username) {
                     stompClient.send("/app/typing", {}, JSON.stringify({
                         from: username,
                         type: "TYPING"
                     }));
+
+                    if (typingTimeout) {
+                        clearTimeout(typingTimeout);
+                    }
+
+                    typingTimeout = setTimeout(() => {
+                        stompClient.send("/app/typing", {}, JSON.stringify({
+                            from: username,
+                            type: "STOP_TYPING"
+                        }));
+                        typingTimeout = null;
+                    }, 2000);
                 }
             });
 
@@ -221,21 +263,17 @@
 
         document.getElementById('messageInput').value = '';
 
-        // Clear local typing indicator
-        if (typingTimeout !== null) {
+        if (typingTimeout) {
             clearTimeout(typingTimeout);
             typingTimeout = null;
         }
-        document.getElementById("typingIndicator").textContent = "";
 
-        // Notify others to clear typing indicator
         stompClient.send("/app/typing", {}, JSON.stringify({
             from: username,
             type: "STOP_TYPING"
         }));
     }
 
-    // Wait until DOM is fully ready
     window.addEventListener('DOMContentLoaded', () => {
         const savedName = localStorage.getItem("chatUsername");
         const usernameInput = document.getElementById("usernameInput");
@@ -251,5 +289,6 @@
         });
     });
 </script>
+
 </body>
 </html>
