@@ -1,45 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Spring WebSocket Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
 
     <style>
         body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f2f5;
-    margin: 0;
-    height: 100vh;
-}
+          font-family: Arial, sans-serif;
+          background-color: #f0f2f5;
+          margin: 0;
+          padding: 0;
+          height: 100vh;
+        }
 
-#login-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
+        #login-wrapper {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
 
-#login-container {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 400px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
+        #login-container {
+          background: white;
+          padding: 30px;
+          border-radius: 10px;
+          width: 400px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          text-align: center;
+        }
 
-#chat-container {
-    display: none; /* Hidden initially */
-    width: 700px;
-    height: 80vh;
-    margin: 40px auto;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    display: flex;
-    overflow: hidden;
-}
+        #chat-container {
+          display: none;
+          max-width: 1000px;
+          height: 90vh;
+          margin: 30px auto;
+          display: flex;
+          background: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+        }
+
+        /* Chat section */
+        #chatSection {
+          flex: 3;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          border-right: 1px solid #eee;
+        }
+
+        #chatSection h2 {
+          margin: 0 0 10px;
+          font-size: 22px;
+        }
+
+        #welcomeMsg {
+          font-weight: bold;
+          margin-bottom: 15px;
+        }
+
+        #chat {
+          list-style: none;
+          padding: 0;
+          margin-top: 15px;
+          flex-grow: 1;
+          overflow-y: auto;
+          border-top: 1px solid #ddd;
+        }
+
+        #chat li {
+          padding: 8px 5px;
+          border-bottom: 1px solid #f1f1f1;
+        }
+
+        #messageArea {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+        }
+
+        #messageInput {
+          flex: 1;
+          padding: 10px;
+          font-size: 1em;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+        }
+
+        #sendButton {
+          padding: 10px 20px;
+          font-size: 1em;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+        }
+
+        #sendButton:hover {
+          background-color: #0056b3;
+        }
+
+        #typingIndicator {
+          font-style: italic;
+          font-size: 0.9em;
+          color: gray;
+          margin-top: 5px;
+        }
+
+        #errorMsg {
+          color: red;
+          font-size: 0.9em;
+          margin-top: 5px;
+          display: none;
+        }
+
+        /* Sidebar */
+        #userSidebar {
+          flex: 1;
+          background: #f8f9fa;
+          padding: 20px;
+          border-left: 1px solid #eee;
+        }
+
+        #userSidebar h3 {
+          margin-top: 0;
+          font-size: 18px;
+        }
+
+        #usersList {
+          list-style: none;
+          padding: 0;
+          margin-top: 10px;
+        }
+
+        #usersList li {
+          padding: 6px 0;
+          border-bottom: 1px solid #ddd;
+          font-size: 0.95em;
+        }
+
+        input[type="text"], button {
+          box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -55,16 +161,18 @@
 <div id="chat-container">
     <!-- Left: Chat Section -->
     <div id="chatSection">
-        <h2>WebSocket Chat</h2>
+        <h2>WebSocket Chat (a work in progress)</h2>
         <p id="welcomeMsg"></p>
 
-        <input type="text" id="messageInput" placeholder="Your message" />
-        <button id="sendButton" onclick="sendMessage()">Send</button>
+        <ul id="chat"></ul>
 
-        <p id="typingIndicator"></p>
+        <div id="typingIndicator"></div>
         <p id="errorMsg"></p>
 
-        <ul id="chat"></ul>
+        <div id="messageArea">
+            <input type="text" id="messageInput" placeholder="Your message" />
+            <button id="sendButton" onclick="sendMessage()">Send</button>
+        </div>
     </div>
 
     <!-- Right: User Sidebar -->
@@ -81,146 +189,144 @@
     const typingUsers = new Set();
 
     function joinChat() {
-        const input = document.getElementById("usernameInput").value.trim();
-        if (!input) return;
+      const input = document.getElementById("usernameInput").value.trim();
+      if (!input) return;
 
-        username = input;
-        localStorage.setItem("chatUsername", username);
+      username = input;
+      localStorage.setItem("chatUsername", username);
 
-        document.getElementById("welcomeMsg").textContent = `Hello ${username}, welcome to the chat!`;
-        document.getElementById("login-wrapper").style.display = "none";
-document.getElementById("chat-container").style.display = "flex";
+      document.getElementById("welcomeMsg").textContent = `Hello ${username}, welcome to the chat!`;
+      document.getElementById("login-wrapper").style.display = "none";
+      document.getElementById("chat-container").style.display = "flex";
 
-        connectSocket();
+      connectSocket();
     }
 
     function connectSocket() {
-        const socket = new SockJS('/ws');
-        stompClient = Stomp.over(socket);
+      const socket = new SockJS('/ws');
+      stompClient = Stomp.over(socket);
 
-        stompClient.connect({}, function () {
-            stompClient.subscribe('/topic/messages', function (msg) {
-                const body = JSON.parse(msg.body);
-                const chat = document.getElementById('chat');
-                const item = document.createElement('li');
-                item.textContent = `${body.time} ${body.from}: ${body.content}`;
-                chat.appendChild(item);
-                chat.scrollTop = chat.scrollHeight;
-            });
-
-            stompClient.subscribe("/topic/typing", function (msg) {
-                const typingData = JSON.parse(msg.body);
-                const typingIndicator = document.getElementById("typingIndicator");
-
-                if (!typingData || typingData.from === username) return;
-
-                if (typingData.type === "TYPING") {
-                    typingUsers.add(typingData.from);
-                } else if (typingData.type === "STOP_TYPING") {
-                    typingUsers.delete(typingData.from);
-                }
-
-                if (typingUsers.size === 0) {
-                    typingIndicator.textContent = "";
-                } else {
-                    const names = Array.from(typingUsers);
-                    if (names.length === 1) {
-                        typingIndicator.textContent = `${names[0]} is typing...`;
-                    } else if (names.length === 2) {
-                        typingIndicator.textContent = `${names[0]} and ${names[1]} are typing...`;
-                    } else {
-                        const last = names.pop();
-                        typingIndicator.textContent = `${names.join(', ')}, and ${last} are typing...`;
-                    }
-                }
-            });
-
-            stompClient.subscribe("/topic/users", function (msg) {
-                const users = JSON.parse(msg.body);
-                const usersList = document.getElementById("usersList");
-                usersList.innerHTML = "";
-
-                users.forEach(function (user) {
-                    const li = document.createElement("li");
-                    li.textContent = user;
-                    usersList.appendChild(li);
-                });
-            });
-
-            const messageInput = document.getElementById('messageInput');
-
-            messageInput.addEventListener('input', function () {
-                if (stompClient && username) {
-                    stompClient.send("/app/typing", {}, JSON.stringify({
-                        from: username,
-                        type: "TYPING"
-                    }));
-
-                    if (typingTimeout) {
-                        clearTimeout(typingTimeout);
-                    }
-
-                    typingTimeout = setTimeout(() => {
-                        stompClient.send("/app/typing", {}, JSON.stringify({
-                            from: username,
-                            type: "STOP_TYPING"
-                        }));
-                        typingTimeout = null;
-                    }, 2000);
-                }
-            });
-
-            messageInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
+      stompClient.connect({}, function () {
+        stompClient.subscribe('/topic/messages', function (msg) {
+          const body = JSON.parse(msg.body);
+          const chat = document.getElementById('chat');
+          const item = document.createElement('li');
+          item.textContent = `${body.time} ${body.from}: ${body.content}`;
+          chat.appendChild(item);
+          chat.scrollTop = chat.scrollHeight;
         });
+
+        stompClient.subscribe("/topic/typing", function (msg) {
+          const typingData = JSON.parse(msg.body);
+          const typingIndicator = document.getElementById("typingIndicator");
+
+          if (!typingData || typingData.from === username) return;
+
+          if (typingData.type === "TYPING") {
+            typingUsers.add(typingData.from);
+          } else if (typingData.type === "STOP_TYPING") {
+            typingUsers.delete(typingData.from);
+          }
+
+          if (typingUsers.size === 0) {
+            typingIndicator.textContent = "";
+          } else {
+            const names = Array.from(typingUsers);
+            if (names.length === 1) {
+              typingIndicator.textContent = `${names[0]} is typing...`;
+            } else if (names.length === 2) {
+              typingIndicator.textContent = `${names[0]} and ${names[1]} are typing...`;
+            } else {
+              const last = names.pop();
+              typingIndicator.textContent = `${names.join(', ')}, and ${last} are typing...`;
+            }
+          }
+        });
+
+        stompClient.subscribe("/topic/users", function (msg) {
+          const users = JSON.parse(msg.body);
+          const usersList = document.getElementById("usersList");
+          usersList.innerHTML = "";
+
+          users.forEach(function (user) {
+            const li = document.createElement("li");
+            li.textContent = user;
+            usersList.appendChild(li);
+          });
+        });
+
+        const messageInput = document.getElementById('messageInput');
+
+        messageInput.addEventListener('input', function () {
+          if (stompClient && username) {
+            stompClient.send("/app/typing", {}, JSON.stringify({
+              from: username,
+              type: "TYPING"
+            }));
+
+            if (typingTimeout) clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+              stompClient.send("/app/typing", {}, JSON.stringify({
+                from: username,
+                type: "STOP_TYPING"
+              }));
+              typingTimeout = null;
+            }, 2000);
+          }
+        });
+
+        messageInput.addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+          }
+        });
+      });
     }
 
     function sendMessage() {
-        const message = document.getElementById('messageInput').value.trim();
-        const errorMsg = document.getElementById('errorMsg');
+      const message = document.getElementById('messageInput').value.trim();
+      const errorMsg = document.getElementById('errorMsg');
 
-        if (!username || !message) {
-            errorMsg.textContent = "Please enter a message.";
-            errorMsg.style.display = "block";
-            setTimeout(() => errorMsg.style.display = "none", 3000);
-            return;
-        }
+      if (!username || !message) {
+        errorMsg.textContent = "Please enter a message.";
+        errorMsg.style.display = "block";
+        setTimeout(() => errorMsg.style.display = "none", 3000);
+        return;
+      }
 
-        stompClient.send('/app/chat', {}, JSON.stringify({
-            from: username,
-            content: message,
-            type: "CHAT"
-        }));
+      stompClient.send('/app/chat', {}, JSON.stringify({
+        from: username,
+        content: message,
+        type: "CHAT"
+      }));
 
-        document.getElementById('messageInput').value = '';
+      document.getElementById('messageInput').value = '';
 
-        if (typingTimeout) {
-            clearTimeout(typingTimeout);
-            typingTimeout = null;
-        }
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        typingTimeout = null;
+      }
 
-        stompClient.send("/app/typing", {}, JSON.stringify({
-            from: username,
-            type: "STOP_TYPING"
-        }));
+      stompClient.send("/app/typing", {}, JSON.stringify({
+        from: username,
+        type: "STOP_TYPING"
+      }));
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        const savedName = localStorage.getItem("chatUsername");
-        const usernameInput = document.getElementById("usernameInput");
+      const savedName = localStorage.getItem("chatUsername");
+      const usernameInput = document.getElementById("usernameInput");
 
-        if (savedName) {
-            usernameInput.value = savedName;
+      if (savedName) {
+        usernameInput.value = savedName;
+      }
+
+      usernameInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+          joinChat();
         }
-
-        usernameInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                joinChat();
-            }
-        });
+      });
     });
 </script>
 
